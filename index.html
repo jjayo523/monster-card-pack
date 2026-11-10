@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>몬스터 카드 팩 개봉 시뮬레이터</title>
+<!-- rev 36 · 2026-11-06 : X 0.1% · 합성 천장(SR→UR 15회, UR→X 20회) · 스타터 팩 -->
 <style>
 :root{--text:#eef0ff;--muted:#8e93bd;--accent:#ffcb3d;--panel:#1a1e3a}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -563,7 +564,7 @@ function renderCol(){
   const owned=Object.keys(save.counts).length;
   const bar=$('#colBar');
   bar.innerHTML=`<span style='margin-right:8px;font-weight:700'>수집 ${owned}/${CARDS.length} (${Math.round(owned/CARDS.length*100)}%)</span>`;
-  [['ALL','전체 팩'],[1,'제1 카드팩'],[2,'제2 카드팩']].forEach(([k,t])=>{const b=document.createElement('button');b.className='chip'+(colPack===k?' on':'');b.textContent=t;b.onclick=()=>{colPack=k;renderCol()};bar.appendChild(b)});
+  [['ALL','전체 팩'],[2,'🌟 스타터 팩'],[1,'제1 카드팩']].forEach(([k,t])=>{const b=document.createElement('button');b.className='chip'+(colPack===k?' on':'');b.textContent=t;b.onclick=()=>{colPack=k;renderCol()};bar.appendChild(b)});
   const sep=document.createElement('span');sep.textContent='|';sep.style.color='#343a70';bar.appendChild(sep);
   ['ALL',...ORDER].forEach(k=>{const b=document.createElement('button');b.className='chip'+(colFilter===k?' on':'');b.textContent=k==='ALL'?'전체':RAR[k].sym+' '+k;b.onclick=()=>{colFilter=k;renderCol()};bar.appendChild(b)});
   const g=$('#colGrid');g.innerHTML='';
@@ -599,7 +600,7 @@ function renderStats(){
     return `<div class="rrow"><span style="color:${RAR[k].color};font-weight:700">${RAR[k].sym} ${k}</span>
       <div class="track"><div class="a" style="width:${Math.min(100,act*100)}%;background:${RAR[k].color}"></div><div class="e" style="left:${Math.min(99.5,exp*100)}%"></div></div>
       <span>${(act*100).toFixed(d)}% <span style="color:var(--muted)">/ ${(exp*100).toFixed(d)}%</span></span></div>`;
-  }).join('')+`<p class="hint" style="text-align:left">※ X 등급은 모든 슬롯에서 0.05%입니다. 마지막 슬롯은 Uncommon 이상 확정이라 나머지 등급의 이론값은 팩 평균으로 계산했습니다. (실제 / 이론)</p>`;
+  }).join('')+`<p class="hint" style="text-align:left">※ X 등급은 모든 슬롯에서 ${RAR.X.w}%입니다. 마지막 슬롯은 Uncommon 이상 확정이라 나머지 등급의 이론값은 팩 평균으로 계산했습니다. (실제 / 이론)</p>`;
   $('#hist').innerHTML=save.history.length?save.history.map(r=>`<span style="color:${RAR[r].color};border-color:${RAR[r].color}">${RAR[r].sym} ${r}</span>`).join(''):'<span style="color:var(--muted);border-color:#343a70">아직 기록이 없어요</span>';
 }
 let resetTimer=0;
@@ -616,8 +617,8 @@ $('#resetBtn').onclick=function(){
 };
 
 /* ================= v2 확장: X 등급 · 카드 130종 · 확률 보정 ================= */
-RAR.C.w=59.95; /* 합계 100 (X 0.05 포함) */
-RAR.X={label:'EXTREME X',sym:'❖',w:0.05,color:'#ff5ce1',hp:260,dmg:240};
+RAR.C.w=59.9; /* 합계 100 (X 0.1 포함) */
+RAR.X={label:'EXTREME X',sym:'❖',w:0.1,color:'#ff5ce1',hp:260,dmg:240};
 ORDER.push('X');
 const EXTRA=[
 ['개미단','🐜','dark','C'],['귀뚤이','🦗','grass','C'],['무당콩','🐞','fire','C'],['앵앵이','🦟','electric','C'],['송사리','🐟','water','C'],['방울복','🐡','water','C'],['쏙새우','🦐','water','C'],
@@ -638,7 +639,7 @@ const EXTRA=[
 ];
 EXTRA.forEach(a=>CARDS.push({id:CARDS.length+1,name:a[0],emoji:a[1],type:a[2],rarity:a[3]}));
 save.rar=Object.assign({C:0,U:0,R:0,SR:0,UR:0,X:0},save.rar);
-/* X 등급은 모든 슬롯에서 독립적으로 0.05%, 나머지는 기존 가중치 (마지막 슬롯은 C 제외) */
+/* X 등급은 모든 슬롯에서 독립적으로 0.1%, 나머지는 기존 가중치 (마지막 슬롯은 C 제외) */
 function pickRarity(noC){
   if(Math.random()<RAR.X.w/100)return 'X';
   const e=Object.entries(RAR).filter(([k])=>k!=='X'&&!(noC&&k==='C')),tot=e.reduce((s,[,v])=>s+v.w,0);
@@ -649,7 +650,7 @@ sfx.chime=(r)=>{const s={U:[660,880],R:[660,880,1100],SR:[523,659,784,1047],UR:[
 /* ================= v3 확장: 제2 카드팩 · 카드팩 선택 · 앞면 먼저 보기 + 가장자리 힌트 ================= */
 const V3PACKS={
   1:{no:'제1 카드팩',name:'몬스터 카드',en:'MONSTER<br>CARDS',emoji:'🐉',sub:'BOOSTER PACK Ⅰ · 5 CARDS',desc:'불꽃·물·풀·번개… 다양한 속성의 몬스터 130종이 담긴 기본 팩.'},
-  2:{no:'제2 카드팩',name:'몽환 별빛',en:'DREAM<br>STAR',emoji:'🌙',sub:'BOOSTER PACK Ⅱ · 5 CARDS',desc:'꽃과 별, 달빛이 어우러진 환상 정원. 별가루 배경과 금빛 장식의 새 카드 프레임.'}
+  2:{no:'스타터 팩',name:'별빛 정원',en:'STARTER<br>PACK',emoji:'🌟',sub:'STARTER PACK · 5 CARDS',desc:'처음 시작하는 모험가를 위한 입문 팩. 카드가 60종이라 도감을 빨리 채울 수 있어요. 꽃·별·달빛 테마 카드가 들어 있어요.'}
 };
 const V3TYPE={
   fire:{atk:'불꽃 왈츠',fl:'타오르는 불꽃은 별빛을 닮아 어둠 속에서도 길을 밝혀 준다.'},
@@ -673,10 +674,10 @@ const V3CARDS2=[
 ['유성의주인','🌠','psychic','UR'],['황금성배령','🏆','dragon','UR'],['영원의심장','💖','dragon','UR'],
 ['창세의별','✴️','psychic','X'],['영겁의무지개','🎆','dragon','X']
 ];
-V3CARDS2.forEach(a=>CARDS.push({id:CARDS.length+1,name:a[0],emoji:a[1],type:a[2],rarity:a[3],pack:2}));
+V3CARDS2.forEach(a=>CARDS.push({id:CARDS.length+1,name:a[0],emoji:a[1],type:a[2],rarity:a[3],pack:2}));try{window.MP_DATA={RAR,CARDS}}catch(e){}
 
-let v3sel=1;
-try{if(localStorage.getItem('monsterPack_sel')==='2')v3sel=2}catch(e){}
+let v3sel=2;
+try{if(localStorage.getItem('monsterPack_sel')==='1')v3sel=1}catch(e){}
 let v3last=null,v3fresh=false,v3list=[],v3i=0,v3active=false,v3busy=false,v3held=false,v3touchT=0,v3selOpen=false,v3rc=null,v3bc=null,v3origClick=null;
 
 const V3CSS=`
@@ -1361,7 +1362,7 @@ try{(function v4cine(){
 })()}catch(e){console.warn('v4cine',e)}
 /* ===== 합성 시스템 ===== */
 try{(()=>{
-const TIERS=[['C','U',100],['U','R',70],['R','SR',40],['SR','UR',10],['UR','X',3]];
+const TIERS=[['C','U',100],['U','R',70],['R','SR',40],['SR','UR',20],['UR','X',10]];
 const FB={C:'#b0b6c8',U:'#5fd38d',R:'#4aa8ff',SR:'#c06bff',UR:'#ffcb3d',X:'#ff4d6d'};
 const col=r=>(RAR[r]&&RAR[r].color)||FB[r]||'#fff';
 const lab=r=>(RAR[r]&&RAR[r].label)||r;
@@ -1731,7 +1732,7 @@ try{(function multiPack(){
         stage.innerHTML='';
         if(!skip&&base){
           const pk=base.cloneNode(true);
-          pk.className='pack m5pk';pk.removeAttribute('style');
+          pk.className='pack m5pk'+(base.classList.contains('p2')?' p2':'');pk.removeAttribute('style');
           pk.querySelectorAll('.scs').forEach(e=>e.remove());
           pk.querySelectorAll('.strip').forEach(s=>{s.style.clipPath=''});
           stage.appendChild(pk);
@@ -1836,7 +1837,7 @@ try{(function multiPack(){
 })()}catch(e){console.warn('multiPack',e)}
 
 try{(function bulkSynth(){
-  const PROB={C:1,U:.7,R:.4,SR:.1,UR:.03};
+  const PROB={C:1,U:.7,R:.4,SR:.2,UR:.1};
   const NEXT={C:'U',U:'R',R:'SR',SR:'UR',UR:'X'};
   const TIERS=['C','U','R','SR','UR'];
   const MAXSET=33;
@@ -1898,11 +1899,11 @@ try{(function bulkSynth(){
   }
 
   /* ---- 실패 시 성공률 누적(천장) ---- */
-  const PY_STEP={C:0,U:.02,R:.01,SR:.005,UR:.003};
+  const PY_STEP={C:0,U:.02,R:.01,SR:.01,UR:.005},PY_CEIL={SR:15,UR:20};
   const pyFmt=p=>{const v=Math.round(p*1000)/10;return Number.isInteger(v)?String(v):v.toFixed(1)};
   const pyObj=()=>{if(!save.pity||typeof save.pity!=='object')save.pity={};return save.pity};
   const pyFails=t=>pyObj()[t]||0;
-  const pyProb=(t,f)=>Math.min(1,Math.round((PROB[t]+f*(PY_STEP[t]||0))*10000)/10000);
+  const pyProb=(t,f)=>(PY_CEIL[t]&&f>=PY_CEIL[t]-1)?1:Math.min(1,Math.round((PROB[t]+f*(PY_STEP[t]||0))*10000)/10000);
   const pyCur=t=>pyProb(t,pyFails(t));
   function pyExp(t,n){
     let d=new Map([[pyFails(t),1]]),e=0;
@@ -1973,7 +1974,7 @@ try{(function bulkSynth(){
         <div class='bk-tiers'>${TIERS.map(r=>`<button class='bk-t${r===tier?' on':''}' data-r='${r}' style='--c:${col(r)}' ${maxSets(r)<1?'disabled':''}><b>${r} → ${NEXT[r]}</b><span>성공 ${pyFmt(pyCur(r))}%${PY_STEP[r]&&pyFails(r)>0?` <em style='font-style:normal;color:#7dffb0'>+${pyFmt(pyCur(r)-PROB[r])}%p</em>`:''}</span><small>재료 ${usable(r)}장</small></button>`).join('')}</div>
         ${mx>=1?`<div class='bk-row'>합성 횟수 <b id='bkN'>${n}</b>회 · 재료 <b id='bkM'>${n*3}</b>장<input type='range' id='bkRange' min='1' max='${mx}' value='${n}'></div><p class='bk-exp'>예상 성공 약 <span id='bkE'>${pyExp(tier,n).toFixed(1)}</span>회 (현재 성공률 ${pyFmt(pyCur(tier))}%${PY_STEP[tier]?` · 실패할 때마다 +${pyFmt(PY_STEP[tier])}%p, 성공하면 기본 ${pyFmt(PROB[tier])}%로 초기화`:''})</p>`:`<p class='bk-warn'>재료가 부족해요. 같은 등급 중복 카드가 3장 이상 있어야 해요. (카드마다 1장은 도감용으로 남겨둬요)</p>`}
         <div class='bk-btns'><button class='btn' id='bkCancel'>닫기</button><button class='btn primary' id='bkGo' ${mx<1?'disabled':''}>📺 광고 보고 합성하기</button></div>
-        <p class='bk-note'>※ 실패한 합성의 재료 카드는 사라져요. 실패하면 다음 합성 성공률이 올라가고(U→R +2%p, R→SR +1%p, SR→UR +0.5%p, UR→X +0.3%p), 성공하면 기본 확률로 돌아가요. 지금 광고는 샘플 화면이에요.</p>
+        <p class='bk-note'>※ 실패한 합성의 재료 카드는 사라져요. 실패하면 다음 합성 성공률이 올라가고(U→R +2%p, R→SR +1%p, SR→UR +1%p, UR→X +0.5%p), 성공하면 기본 확률로 돌아가요. SR→UR은 15번째, UR→X는 20번째 시도에서 성공이 확정돼요. 지금 광고는 샘플 화면이에요.</p>
       </div>`;
       ui.querySelectorAll('.bk-t').forEach(b=>b.onclick=()=>{tier=b.dataset.r;n=maxSets(tier);draw()});
       const rg=ui.querySelector('#bkRange');
@@ -2174,7 +2175,7 @@ try{(function bulkSynth(){
         <h3>🔮 카드 합성</h3>
         <p class='ms-sub'>같은 등급 카드 3장을 합성하면 윗등급 카드 1장을 얻어요. 실패하면 재료는 사라지지만 다음 성공률이 올라가요. (카드마다 1장은 도감용으로 남겨둬요)</p>
         <div class='ms-tiers'>${TIERS.map(r=>{const b=pyCur(r)-PROB[r];return `<button class='ms-t${r===tier?' on':''}' data-r='${r}' style='--c:${col(r)}'><b>${r} → ${NEXT[r]}</b><span>성공 ${pyFmt(pyCur(r))}%${b>1e-9?` <em>▲+${pyFmt(b)}%p</em>`:''}</span><small>재료 ${usableOf(r)}장</small></button>`}).join('')}</div>
-        <div class='ms-info'>현재 성공률 <b>${pyFmt(pyCur(tier))}%</b> <span class='mu'>(기본 ${pyFmt(PROB[tier])}%${step?` · 연속 실패 ${f}회 · 실패할 때마다 +${pyFmt(step)}%p, 성공하면 기본 확률로 초기화`:''})</span>${bonus>1e-9?`<br><em>▲ 실패 누적 보너스 +${pyFmt(bonus)}%p 적용 중</em>`:''}</div>
+        <div class='ms-info'>현재 성공률 <b>${pyFmt(pyCur(tier))}%</b> <span class='mu'>(기본 ${pyFmt(PROB[tier])}%${step?` · 연속 실패 ${f}회 · 실패할 때마다 +${pyFmt(step)}%p, 성공하면 기본 확률로 초기화`:''}${PY_CEIL[tier]?` · 늦어도 ${PY_CEIL[tier]-f}번 안에 성공 확정`:''})</span>${bonus>1e-9?`<br><em>▲ 실패 누적 보너스 +${pyFmt(bonus)}%p 적용 중</em>`:''}</div>
         <div class='ms-slots'>${[0,1,2].map(i=>`<div class='ms-slot${sel[i]?' f':''}'>${sel[i]?'':'<span>?</span>'}</div>`).join('')}<div class='ms-arrow'>→</div><div class='ms-slot' style='cursor:default;border-style:solid;border-color:${col(nt)}'><span style='color:${col(nt)}'>${nt}</span></div></div>
         <div class='ms-hint${kind?' same':''}'>${hint}</div>
         <div class='ms-btns'><button class='btn' id='msAuto'>⚡ 자동 선택</button><button class='btn' id='msClear'>비우기</button><button class='btn primary' id='msGo' ${sel.length<3||busy?'disabled':''}>🔮 합성하기</button></div>
@@ -2275,6 +2276,91 @@ try{(function bulkSynth(){
     render();
   })()}catch(e){console.warn('manualSynth',e)}
 })()}catch(e){console.warn('bulkSynth',e)}
+  /* ================= rev 37: 부드러운 가위 소리 · 카드 밀어서 넘기기 ================= */
+  try{(function softSnipSwipe(){
+    /* ---- 1) 가위 소리: 거친 '치익' 대신 부드러운 '사각사각' ---- */
+    let nbuf=null;
+    const nb=c=>{if(nbuf&&nbuf.sampleRate===c.sampleRate)return nbuf;const n=Math.floor(c.sampleRate*.6);nbuf=c.createBuffer(1,n,c.sampleRate);const d=nbuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return nbuf};
+    function sNoise(d,v,f,q,type,t0){
+      if(muted)return;const c=ac();if(!c)return;
+      const t=c.currentTime+(t0||0),s=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();
+      s.buffer=nb(c);fl.type=type||'bandpass';fl.frequency.value=f;fl.Q.value=q||1;
+      g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      s.connect(fl);fl.connect(g);g.connect(c.destination);s.start(t,Math.random()*.3);s.stop(t+d+.03);
+    }
+    function sTone(f,d,v,t0,f2){
+      if(muted)return;const c=ac();if(!c)return;
+      const t=c.currentTime+(t0||0),o=c.createOscillator(),g=c.createGain();
+      o.type='sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+      g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.03);
+    }
+    let lastSnip=0,alt=0;
+    sfx.tear=function(){
+      const now=performance.now();if(now-lastSnip<105)return;lastSnip=now;   /* 너무 촘촘하지 않게 */
+      alt^=1;const f=alt?2300:1900;                                          /* 사-각 번갈아 */
+      sNoise(.045,.022,f+Math.random()*250,1.4);
+      sTone(alt?1250:1050,.035,.008);
+    };
+    sfx.rip=function(){
+      sNoise(.32,.035,1500,.7,'lowpass');                                   /* 종이가 '사락' 열리는 소리 */
+      sNoise(.18,.018,3200,1.2,'bandpass',.03);
+      [660,880,1175].forEach((f,i)=>sTone(f,.5,.022,.08+i*.07));           /* 작은 반짝임 */
+    };
+
+    /* ---- 2) 카드를 오른쪽에서 왼쪽으로 밀어서 넘기기 ---- */
+    const st=document.createElement('style');
+    st.textContent=`#stack{touch-action:pan-y}
+#stack .v3front.sw-back{transition:translate .22s cubic-bezier(.3,1.4,.5,1)!important}`;
+    document.head.appendChild(st);
+    const TH=60;          /* 이만큼(px) 왼쪽으로 밀면 넘김 */
+    let sw=null,eatClick=0;
+    const canSwipe=()=>v3active&&!v3busy&&!v3held&&!$('#reveal').classList.contains('hide');
+    stack.addEventListener('pointerdown',e=>{
+      if(e.button>0||!canSwipe())return;
+      const f=stack.querySelector('.v3front');if(!f)return;
+      sw={x:e.clientX,y:e.clientY,t:performance.now(),f,dx:0,on:false,id:e.pointerId};
+    });
+    addEventListener('pointermove',e=>{
+      if(!sw||e.pointerId!==sw.id)return;
+      const dx=e.clientX-sw.x,dy=e.clientY-sw.y;
+      if(!sw.on){
+        if(Math.abs(dx)<10)return;
+        if(Math.abs(dy)>Math.abs(dx)){sw=null;return}                     /* 세로로 움직이면 스크롤로 보고 무시 */
+        sw.on=true;try{clearTimeout(v3touchT)}catch(_){}                     /* 길게 눌러 엿보기 취소 */
+        try{v3setPeek(false)}catch(_){}
+        sw.f.classList.remove('sw-back');
+      }
+      sw.dx=dx;
+      const v=dx<0?dx:dx*.25;                                                /* 오른쪽으로는 살짝만 */
+      sw.f.style.translate=`${v.toFixed(1)}px 0`;
+    },{passive:true});
+    function end(e){
+      if(!sw||(e&&e.pointerId!==sw.id))return;
+      const s=sw;sw=null;if(!s.on)return;
+      eatClick=performance.now();                                            /* 손을 뗄 때 생기는 클릭은 무시 */
+      const dt=Math.max(1,performance.now()-s.t),vel=-s.dx/dt;
+      if(s.dx<=-TH||(s.dx<-25&&vel>.55)){
+        if(canSwipe())v3proxy();                                              /* 클릭과 같은 '다음 카드' 동작 */
+        else{s.f.classList.add('sw-back');s.f.style.translate=''}
+      }else{
+        s.f.classList.add('sw-back');s.f.style.translate='';
+      }
+    }
+    addEventListener('pointerup',end);
+    addEventListener('pointercancel',end);
+    addEventListener('click',e=>{
+      if(eatClick&&performance.now()-eatClick<350&&stack.contains(e.target)){e.stopPropagation();e.stopImmediatePropagation();e.preventDefault()}
+      eatClick=0;
+    },true);
+
+    /* 안내 문구 */
+    const hint=$('#revHint');
+    if(hint)new MutationObserver(()=>{
+      if(!v3active)return;const t=hint.textContent;
+      if(t.includes('클릭해서')&&!t.includes('밀어서'))hint.textContent=t.replace('클릭해서','클릭하거나 ← 밀어서');
+    }).observe(hint,{childList:true,characterData:true,subtree:true});
+  })()}catch(e){console.warn('softSnipSwipe',e)}
 })();
 
 try{(function skipBottomCenter(){
@@ -2450,7 +2536,7 @@ try{(function m5Limit(){
       mode=m;
       box.innerHTML=m==='full'
         ?`<h3>✅ 충전 완료!</h3><p>5팩 연속 열기를 <b>${S.n}/${MAX}</b>회 쓸 수 있어요.</p><button class='btn primary' data-act='close' data-m5ui='1'>확인</button>`
-        :`<h3>⏳ 5팩 연속 열기를 모두 사용했어요</h3><p>1시간이 지나면 <b>${MAX}회</b>가 다시 충전돼요.</p><div class='m5l-time' id='m5lT'>--:--</div><div class='m5l-bar'><i id='m5lB'></i></div><button class='btn primary' data-act='ad' data-m5ui='1'>📺 광고 보고 바로 ${MAX}회 충전</button><button class='btn' data-act='close' data-m5ui='1'>닫기</button><small>광고를 끝까지 보면 기다리지 않고 바로 충전돼요.</small>`;
+        :`<h3>⏳ 5팩 연속 열기를 모두 사용했어요</h3><p>1시간이 지나면 <b>${MAX}회</b>가 다시 충전돼요.</p><div class='m5l-time' id='m5lT'>--:--</div><div class='m5l-bar'><i id='m5lB'></i></div><button class='btn primary' data-act='ad' data-m5ui='1'>📺 광고 보고 바로 ${MAX}회 충전</button><button class='btn' data-act='close' data-m5ui='1'>닫기</button><small>광고를 끝까지 보면 기다리지 않고 바로 충전돼요.</small><small>🎁 보상: 5팩 연속 열기 ${MAX}회 · 광고로 여는 팩도 일반 팩과 확률이 같아요 · <a href='#' data-act='prob' style='color:#ffcb3d;font-weight:700'>ⓘ 확률 보기</a></small>`;
     }
     if(m==='wait'){
       box.querySelector('#m5lT').textContent=fmt(left());
@@ -2467,6 +2553,7 @@ try{(function m5Limit(){
       const b=e.target.closest&&e.target.closest('[data-act]');if(!b)return;
       if(b.dataset.act==='close')closeModal();
       else if(b.dataset.act==='ad')watchAd();
+      else if(b.dataset.act==='prob'){e.preventDefault();if(window.prOpenProb)window.prOpenProb('pack')}
     });
     render();
   }
@@ -2510,6 +2597,288 @@ try{(function packSelTop(){
   new MutationObserver(()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;fix()})}).observe(document.body,{childList:true,subtree:true});
   fix();
 })()}catch(e){console.warn('packSelTop',e)}
+
+/* ================= 확률 공개 (2차): 확률 정보 창 · 팩 요약 · 광고 보상 안내 · 합성 규칙 ================= */
+try{(function probInfo(){
+  const VER='2026-11-10 (2차)';           /* 확률을 바꾸면 기준일도 바꾸기 */
+  const ORD=['C','U','R','SR','UR','X'];
+  const META={C:['●','#b0b6c8'],U:['◆','#5fd38d'],R:['★','#4aa8ff'],SR:['★★','#c06bff'],UR:['✦','#ffcb3d'],X:['❖','#ff5ce1']};
+  /* 게임 데이터(window.MP_DATA)를 읽지 못할 때만 쓰는 기본값 */
+  const DEF_W={C:59.9,U:25,R:10,SR:4,UR:1,X:0.1};
+  const DEF_N={1:{C:40,U:35,R:25,SR:15,UR:10,X:5},2:{C:20,U:16,R:12,SR:7,UR:3,X:2}};
+  const PORD=[2,1];
+  const PNAME={1:'제1 카드팩 · 몬스터 카드',2:'🌟 스타터 팩 · 별빛 정원'};
+  /* 합성 확률 [재료, 결과, 기본 %, 실패 1회당 %p, 천장(N번째 시도 성공 확정 · 0=없음)]
+     합성 코드의 PROB · PY_STEP · PY_CEIL 을 바꾸면 여기도 같이 바꿔야 한다 */
+  const SYN=[['C','U',100,0,0],['U','R',70,2,0],['R','SR',40,1,0],['SR','UR',20,1,15],['UR','X',10,.5,20]];
+
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const norm=s=>(s||'').replace(/[^\uAC00-\uD7A3 ]/g,'').replace(/\s+/g,' ').trim();
+  const pct=p=>{const v=p*100;if(!(v>0))return '0%';const d=v>=1?2:v>=.1?3:4;return parseFloat(v.toFixed(d))+'%'};
+  const oneIn=p=>p>0?'약 '+Math.round(1/p).toLocaleString()+'팩에 1번':'-';
+  const num=v=>String(parseFloat(v.toFixed(2)));
+  const curPack=()=>{try{return localStorage.getItem('monsterPack_sel')==='1'?1:2}catch(e){return 2}};
+  const att=(p0,up,cap)=>{let E=0,s=1,n=0;while(s>1e-9&&n<100000){const p=(cap&&n+1>=cap)?1:Math.min(1,(p0+up*n)/100);E+=s*p*(n+1);s*=1-p;n++}return E};
+  const fails=t=>{try{const s=JSON.parse(localStorage.getItem('monsterPack_v1')),v=s&&s.pity&&s.pity[t];return typeof v==='number'&&v>0?v:0}catch(e){return 0}};
+  const rateNow=(p0,up,cap,f)=>(cap&&f>=cap-1)?100:Math.min(100,p0+up*f);
+  const capTxt=()=>SYN.filter(x=>x[4]).map(x=>`${x[0]}→${x[1]} ${x[4]}번째`).join(' · ');
+
+  function src(){
+    let R=null,C=null;
+    try{const d=window.MP_DATA;if(d&&d.RAR&&d.RAR.C)R=d.RAR;if(d&&Array.isArray(d.CARDS))C=d.CARDS}catch(e){}
+    const W={};ORD.forEach(k=>{W[k]=R&&R[k]&&typeof R[k].w==='number'?R[k].w:DEF_W[k]});
+    return {W,C,live:!!(R&&C)};
+  }
+  /* a = 1~4번째 장, b = 5번째 장(C 제외) — X는 모든 장에서 먼저 판정 */
+  function slotP(W){
+    const xp=(W.X||0)/100,base=ORD.filter(k=>k!=='X'),tot=base.reduce((s,k)=>s+W[k],0),noC=tot-W.C,a={},b={};
+    ORD.forEach(k=>{
+      if(k==='X'){a.X=b.X=xp;return}
+      a[k]=(1-xp)*W[k]/tot;b[k]=k==='C'?0:(1-xp)*W[k]/noC;
+    });
+    return {a,b};
+  }
+  const atl=(P,ks)=>{const pa=ks.reduce((s,k)=>s+P.a[k],0),pb=ks.reduce((s,k)=>s+P.b[k],0);return 1-Math.pow(1-pa,4)*(1-pb)};
+  function group(C,pk){if(!C)return null;const g={};ORD.forEach(k=>g[k]=[]);C.forEach(c=>{if((c.pack||1)===pk&&g[c.rarity])g[c.rarity].push(c)});return g}
+  function counts(G,pk){if(!G)return DEF_N[pk];const n={};ORD.forEach(k=>n[k]=G[k].length);return n}
+  const total=n=>ORD.reduce((s,k)=>s+(n[k]||0),0);
+
+  const st=document.createElement('style');
+  st.textContent=`
+.pr-ib{white-space:nowrap}
+.pr-ib.pr-fx{position:fixed!important;z-index:35;margin:0!important;display:inline-flex;align-items:center}
+.pr-line{margin-top:8px;font-size:12px;color:#8e93bd;cursor:pointer;text-align:center;padding:4px 12px;border-radius:99px;border:1px dashed #343a70;transition:.15s}
+.pr-line:hover,.pr-line:focus-visible{color:#eef0ff;border-color:#5a61a8;outline:none}
+.pr-line u{color:#ffcb3d;text-decoration:none;font-weight:700;margin-left:6px}
+.pr-ov{position:fixed;inset:0;z-index:100001;background:rgba(5,6,18,.86);display:flex;align-items:center;justify-content:center;padding:14px}
+.pr-box{width:min(760px,100%);max-height:calc(100vh - 28px);display:flex;flex-direction:column;background:#141836;border:1px solid #343a70;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6);color:#eef0ff;overflow:hidden;user-select:text}
+.pr-top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px}
+.pr-top h3{font-size:18px}
+.pr-x{background:none;border:0;color:#8e93bd;font-size:20px;cursor:pointer;padding:4px 8px}
+.pr-x:hover{color:#fff}
+.pr-tabs{display:flex;gap:6px;padding:0 18px 10px;border-bottom:1px solid #262b58;flex-wrap:wrap}
+.pr-tab,.pr-chip{background:#1a1e3a;color:#eef0ff;border:1px solid #343a70;border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
+.pr-tab.on,.pr-chip.on{background:#ffcb3d;color:#1a1a1a;border-color:#ffcb3d;font-weight:700}
+.pr-body{padding:14px 18px;overflow:auto;font-size:13px;line-height:1.6}
+.pr-body h4{font-size:14px;margin:16px 0 8px;color:#ffe27a}
+.pr-body h4:first-child{margin-top:0}
+.pr-chips{display:flex;gap:6px;flex-wrap:wrap}
+.pr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.pr-stat{background:#1a1e3a;border:1px solid #2a3068;border-radius:12px;padding:10px;display:flex;flex-direction:column}
+.pr-stat b{font-size:20px;font-variant-numeric:tabular-nums}
+.pr-stat span{font-size:12px;color:#b9bde0}
+.pr-stat small{font-size:11px;color:#8e93bd}
+.pr-wrap{overflow-x:auto}
+.pr-tbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pr-tbl th,.pr-tbl td{padding:7px 8px;border-bottom:1px solid #262b58;text-align:right}
+.pr-tbl th:first-child,.pr-tbl td:first-child{text-align:left;font-weight:800}
+.pr-tbl th{color:#8e93bd;font-weight:700;font-size:11.5px;line-height:1.35}
+.pr-tbl small{color:#8e93bd;font-size:10.5px}
+.pr-tbl .pr-cur{color:#7dffb0;font-weight:800}
+.pr-det{background:#1a1e3a;border:1px solid #2a3068;border-radius:10px;margin:6px 0;padding:6px 10px}
+.pr-det summary{cursor:pointer;font-size:12.5px}
+.pr-names{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.pr-names span{font-size:11.5px;background:#0f1230;border-radius:7px;padding:2px 7px}
+.pr-names i{font-style:normal;color:#8e93bd}
+.pr-notes{padding-left:18px;color:#b9bde0}
+.pr-notes li{margin:3px 0}
+.pr-notes b{color:#eef0ff}
+.pr-info p{margin:0 0 10px;color:#b9bde0}
+.pr-info p b{color:#eef0ff}
+.pr-foot{padding:8px 18px 12px;font-size:11px;color:#8e93bd;border-top:1px solid #262b58}
+.pr-psum{margin-top:12px;padding:10px 12px;border-radius:12px;background:#0f1230;border:1px solid #2a3068;font-size:12px;line-height:1.7;color:#b9bde0;text-align:center;flex-basis:100%;width:100%}
+.pr-psum b{color:#ffe27a}
+.pr-link{color:#ffcb3d;font-weight:700;cursor:pointer;text-decoration:underline}
+.pr-snote{margin:4px 0 12px;padding:9px 12px;border-radius:12px;background:#141836;border:1px solid #2a3068;font-size:12.5px;line-height:1.6;color:#b9bde0}
+.pr-snote b{color:#ffe27a}
+.pr-adnote{display:block;margin:6px auto 0;font-size:11.5px;color:#b9bde0;text-align:center}
+/* 합성 탭이 예전 확률 표를 숨길 때 이 안내문까지 숨기지 않게 */
+.pr-snote.ms-oldhide,.pr-adnote.ms-oldhide{display:block!important}
+/* 스타터 팩: 선택 창 맨 앞 + BEGINNER 리본 */
+.psel-list .ptile:has(.mpk.k2){order:-1}
+.mpk.k2::after{content:'BEGINNER';position:absolute;left:50%;bottom:8px;transform:translateX(-50%);padding:2px 8px;border-radius:99px;background:linear-gradient(90deg,#7dffb0,#d8ffe9);color:#064d2a;font-size:9px;font-weight:900;letter-spacing:1.5px;white-space:nowrap}
+.pr-rib{display:none}
+.pack.p2 .pr-rib{display:block;position:absolute;top:16px;right:-36px;width:140px;padding:3px 0;transform:rotate(38deg);text-align:center;background:linear-gradient(90deg,#7dffb0,#d8ffe9);color:#064d2a;font-size:10px;font-weight:900;letter-spacing:2px;box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2;pointer-events:none}
+`;
+  document.head.appendChild(st);
+
+  /* ---------- ① 확률 정보 창 ---------- */
+  let ov=null,tab='pack',pk=2;
+  function open(t,p){
+    tab=t||'pack';pk=p||curPack();
+    if(!ov){
+      ov=document.createElement('div');ov.className='pr-ov';ov.setAttribute('data-pr','1');ov.setAttribute('data-m5ui','1');
+      ov.addEventListener('click',e=>{
+        if(e.target===ov){close();return}
+        const b=e.target.closest('[data-pr-act]');if(!b)return;
+        const a=b.dataset.prAct;
+        if(a==='close')close();
+        else if(a==='tab'){tab=b.dataset.v;draw()}
+        else if(a==='pk'){pk=+b.dataset.v;draw()}
+      });
+      document.body.appendChild(ov);
+    }
+    draw();
+  }
+  function close(){if(ov){ov.remove();ov=null}}
+  window.prOpenProb=open;
+
+  function packHTML(S,P){
+    const G=group(S.C,pk),N=counts(G,pk),n2=total(counts(group(S.C,2),2));
+    let h=`<div class="pr-chips">${PORD.map(n=>`<button class="pr-chip${pk===n?' on':''}" data-pr-act="pk" data-v="${n}">${PNAME[n]}</button>`).join('')}</div>`;
+    h+=`<h4 style="margin-top:14px">팩 1개(5장)를 열 때 1장 이상 나올 확률</h4><div class="pr-stats">`+
+      [['R','R 이상'],['SR','SR 이상'],['UR','UR 이상'],['X','X']].map(([k,t])=>{
+        const p=atl(P,ORD.slice(ORD.indexOf(k)));
+        return `<div class="pr-stat"><b style="color:${META[k][1]}">${pct(p)}</b><span>${t}</span><small>${oneIn(p)}</small></div>`;
+      }).join('')+`</div>`;
+    h+=`<h4>등급별 확률 · ${PNAME[pk]} (총 ${total(N)}종)</h4><div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>등급</th><th>1~4번째 장</th><th>5번째 장</th><th>카드 수</th><th>카드 1장당<br>1~4번째 / 5번째</th></tr></thead><tbody>`+
+      ORD.map(k=>{const n=N[k]||0,per=x=>n?pct(x/n):'-';
+        return `<tr><td style="color:${META[k][1]}">${META[k][0]} ${k}</td><td>${pct(P.a[k])}</td><td>${pct(P.b[k])}</td><td>${n}종</td><td>${per(P.a[k])} / ${per(P.b[k])}</td></tr>`;
+      }).join('')+`</tbody></table></div>`;
+    if(G){
+      h+=`<h4>카드별 확률 (등급을 누르면 펼쳐져요)</h4>`+ORD.filter(k=>G[k].length).map(k=>{
+        const n=G[k].length;
+        return `<details class="pr-det"><summary><b style="color:${META[k][1]}">${META[k][0]} ${k}</b> · ${n}종 · 1장당 ${pct(P.a[k]/n)} <span style="color:#8e93bd">(5번째 장 ${pct(P.b[k]/n)})</span></summary><div class="pr-names">${G[k].map(c=>`<span>${esc(c.emoji||'')} ${esc(c.name)} <i>#${String(c.id).padStart(3,'0')}</i></span>`).join('')}</div></details>`;
+      }).join('');
+    }
+    h+=`<h4>뽑기 방식</h4><ul class="pr-notes">
+<li>팩 1개에는 카드 <b>5장</b>이 들어 있고, 장마다 따로 추첨해요.</li>
+<li>모든 장에서 먼저 <b>X 등급(${pct(P.a.X)})</b>을 판정하고, X가 아니면 나머지 등급의 비율로 정해요.</li>
+<li><b>5번째 장은 U 이상 확정</b>이에요. C를 뺀 나머지 등급의 비율로 다시 계산해요.</li>
+<li>같은 등급 안에서는 모든 카드가 같은 확률이에요. 한 팩 안에서 같은 카드가 겹칠 수 있어요.</li>
+<li>🌟 <b>스타터 팩</b>은 카드가 ${n2}종이라 특정 카드 1장이 더 잘 나와요. <b>등급 확률은 두 팩이 같아요.</b></li>
+<li><b>5팩 연속 열기</b>와 <b>광고 보상</b>으로 여는 팩도 확률이 똑같아요.</li></ul>`;
+    return h;
+  }
+  function synHTML(){
+    let h=`<h4>단계별 성공률</h4><div class="pr-wrap"><table class="pr-tbl"><thead><tr><th>단계<br>(같은 등급 3장)</th><th>기본<br>성공률</th><th>실패 1회당<br>증가</th><th>천장<br>(성공 확정)</th><th>지금<br>성공률</th><th>성공까지<br>평균 시도</th><th>성공까지<br>평균 재료</th></tr></thead><tbody>`+
+      SYN.map(([f,t,p,up,cap])=>{const e=att(p,up,cap),n=up?fails(f):0,c=rateNow(p,up,cap,n);
+        return `<tr><td><span style="color:${META[f][1]}">${f}</span> → <span style="color:${META[t][1]}">${t}</span></td><td>${p}%</td><td>${up?'+'+up+'%p':'-'}</td><td>${cap?cap+'번째 시도':'-'}</td><td${n?' class="pr-cur"':''}>${num(c)}%${n?`<br><small>연속 실패 ${n}회</small>`:''}</td><td>${e.toFixed(1)}회</td><td>${(e*3).toFixed(1)}장</td></tr>`;
+      }).join('')+`</tbody></table></div>`;
+    h+=`<h4>규칙</h4><ul class="pr-notes">
+<li>같은 등급 카드 <b>3장</b>을 재료로 써요. 카드마다 1장은 도감용으로 남고, 겹친 카드만 재료가 돼요.</li>
+<li>실패하면 <b>재료 3장은 사라져요.</b></li>
+<li>실패할 때마다 그 단계의 성공률이 위 표만큼 올라가고, <b>성공하면 기본 확률로 돌아가요.</b> 단계마다 따로 쌓여요.</li>
+<li><b>천장:</b> 연속으로 실패해도 <b>${capTxt()} 시도는 반드시 성공</b>해요.</li>
+<li>수동 합성과 광고 자동 합성은 <b>같은 누적 확률과 천장</b>을 함께 써요. ‘지금 성공률’은 이 브라우저에 저장된 연속 실패 횟수로 계산해요.</li>
+<li><b>수동 합성 결과:</b> 재료 3장의 속성이 모두 같으면 그 속성의 윗등급 카드 중에서, 속성이 섞이면 윗등급 카드 전체 중에서 무작위로 정해져요(각 카드 같은 확률).</li>
+<li><b>광고 자동 합성 결과:</b> 속성과 관계없이 윗등급 카드 전체 중에서 무작위로 정해져요(각 카드 같은 확률).</li>
+<li>합성 결과 후보에는 <b>두 팩(몬스터 카드 · 스타터 팩)의 카드가 모두</b> 들어 있어요.</li>
+<li>‘평균 시도·평균 재료’는 기본 확률에서 시작해 처음 성공할 때까지의 평균값이에요(천장 포함).</li></ul>`;
+    return h;
+  }
+  function infoHTML(){
+    return `<div class="pr-info">
+<p>🎨 <b>오리지널 작품</b> — 이 게임의 몬스터 이름·그림·카드 디자인은 모두 오리지널이며, 특정 게임·애니메이션·카드게임 IP와 관련이 없습니다.</p>
+<p>📺 <b>광고 보상</b> — 광고를 끝까지 보면 5팩 연속 열기 횟수가 충전되거나 자동 합성을 할 수 있어요. 광고로 여는 팩과 합성도 이 창의 확률과 똑같아요. 광고 보상은 게임 안에서만 쓰이며 현금·상품으로 바꿀 수 없어요.</p>
+<p>💳 <b>유료 결제</b> — 현재 유료 결제 상품은 없어요.</p>
+<p>📊 <b>실제 비율 확인</b> — 통계 탭에서 지금까지 뽑은 등급 비율과 이론값을 비교할 수 있어요.</p>
+<p>🔧 <b>확률 변경</b> — 확률이 바뀌면 아래 기준일을 함께 바꿔서 알려 드려요.</p>
+<p>🧪 <b>테스트 버전</b> — 기록은 이 브라우저에만 저장되며, 브라우저 데이터를 지우면 사라질 수 있어요.</p></div>`;
+  }
+  function draw(){
+    if(!ov)return;
+    const S=src(),P=slotP(S.W);
+    const tabs=[['pack','🎴 카드팩 확률'],['syn','⚗️ 합성 확률'],['info','ℹ️ 안내']];
+    const body=tab==='syn'?synHTML():tab==='info'?infoHTML():packHTML(S,P);
+    ov.innerHTML=`<div class="pr-box" role="dialog" aria-modal="true" aria-label="확률 정보">
+<div class="pr-top"><h3>📊 확률 정보</h3><button class="pr-x" data-pr-act="close" aria-label="닫기">✕</button></div>
+<div class="pr-tabs">${tabs.map(([k,t])=>`<button class="pr-tab${tab===k?' on':''}" data-pr-act="tab" data-v="${k}">${t}</button>`).join('')}</div>
+<div class="pr-body">${body}</div>
+<div class="pr-foot">확률 기준일 ${VER} · 게임 설정값으로 자동 계산 · 표시값은 반올림한 값이라 합계가 100%와 조금 다를 수 있어요.${S.live?'':' (기본 설정값으로 표시 중)'}</div></div>`;
+  }
+
+  /* ---------- 화면 곳곳에 진입점 붙이기 ---------- */
+  let ib=null;
+  function inject(){
+    const S=src(),P=slotP(S.W);
+
+    /* 스타터 팩 BEGINNER 리본 (스타터 팩일 때만 CSS로 보임) */
+    const pb=document.querySelector('#pack .pack-body');
+    if(pb&&!pb.querySelector(':scope > .pr-rib')){const r=document.createElement('div');r.className='pr-rib';r.setAttribute('data-pr','1');r.textContent='BEGINNER';pb.appendChild(r)}
+
+    /* ① 카드팩 선택 버튼 옆 'ⓘ 확률 정보' */
+    const sel=[...document.querySelectorAll('button')].find(b=>!b.closest('[data-m5ui],[data-pr],#modal')&&norm(b.textContent)==='카드팩 선택');
+    if(sel){
+      if(!ib){ib=document.createElement('button');ib.type='button';ib.className='btn pr-ib';ib.setAttribute('data-pr','1');ib.setAttribute('data-pr-open','pack');ib.textContent='ⓘ 확률 정보'}
+      if(sel.nextElementSibling!==ib)sel.after(ib);
+      const r=sel.getBoundingClientRect(),fx=r.width>0&&getComputedStyle(sel).position==='fixed';
+      ib.classList.toggle('pr-fx',fx);
+      if(fx){
+        /* 오른쪽 메뉴와 겹치면 카드팩 선택 버튼 아래로 */
+        const iw=ib.offsetWidth||100;let L=r.right+8,T=r.top;
+        const nv=document.querySelector('header nav'),n=nv&&nv.getBoundingClientRect();
+        if(n&&n.width>0&&L+iw>n.left-6&&T<n.bottom&&T+r.height>n.top){L=r.left+(r.width-iw)/2;T=r.bottom+6}
+        if(L+iw>innerWidth-4)L=Math.max(4,innerWidth-4-iw);
+        const l=Math.round(L)+'px',t=Math.round(T)+'px',hh=Math.round(r.height)+'px';
+        if(ib.style.left!==l)ib.style.left=l;if(ib.style.top!==t)ib.style.top=t;if(ib.style.height!==hh)ib.style.height=hh;
+      }else if(ib.style.left){ib.style.left='';ib.style.top='';ib.style.height=''}
+    }
+
+    /* ② 개봉 화면 팩 아래 요약 한 줄 */
+    const pa=document.getElementById('packArea');
+    if(pa){
+      let ln=pa.querySelector(':scope > .pr-line');
+      if(!ln){ln=document.createElement('div');ln.className='pr-line';ln.setAttribute('data-pr','1');ln.setAttribute('data-pr-open','pack');ln.setAttribute('role','button');ln.tabIndex=0;pa.appendChild(ln)}
+      const txt=`장당 확률 · UR ${pct(P.a.UR)} · X ${pct(P.a.X)} · 5번째 장은 U 이상 확정`;
+      if(ln.dataset.t!==txt){ln.dataset.t=txt;ln.innerHTML=`${txt}<u>ⓘ 전체 확률</u>`}
+    }
+
+    /* ② 카드팩 선택 창 아래 확률 요약 */
+    document.querySelectorAll('.psel-box').forEach(bx=>{
+      if(bx.querySelector('.pr-psum'))return;
+      const d=document.createElement('div');d.className='pr-psum';d.setAttribute('data-pr','1');
+      const n1=total(counts(group(S.C,1),1)),n2=total(counts(group(S.C,2),2));
+      d.innerHTML=`<b>📊 등급 확률 (장당 · 두 팩 같음)</b><br>${ORD.map(k=>`<span style="color:${META[k][1]}">${k} ${pct(P.a[k])}</span>`).join(' · ')}<br>5번째 장은 U 이상 확정 · 🌟 스타터 팩 ${n2}종 / 몬스터 카드 ${n1}종 · 종류가 적은 스타터 팩이 도감을 채우기 쉬워요<br><span class="pr-link" data-pr-open="pack">ⓘ 카드별 확률 보기</span><br><span style="font-size:11px;color:#8e93bd">오리지널 작품이며 특정 IP와 관련이 없습니다.</span>`;
+      bx.appendChild(d);
+    });
+
+    /* ④ 합성 탭 맨 위 규칙 안내 */
+    const nb=[...document.querySelectorAll('nav button[data-view]')].find(b=>norm(b.textContent)==='합성');
+    const sec=nb&&document.getElementById('view-'+nb.dataset.view);
+    if(sec&&!sec.querySelector(':scope > .pr-snote')){
+      const d=document.createElement('div');d.className='pr-snote';d.setAttribute('data-pr','1');
+      d.innerHTML=`⚗️ <b>합성 확률 안내</b> · 실패할 때마다 성공률이 조금씩 올라가고, 성공하면 기본 확률로 돌아가요. 천장: ${capTxt()} 시도는 성공 확정. 실패하면 재료 3장은 사라져요. <span class="pr-link" data-pr-open="syn">ⓘ 자세히</span>`;
+      sec.prepend(d);
+    }
+
+    /* ③ 광고 자동 합성 버튼 아래 보상 안내 */
+    document.querySelectorAll('button').forEach(b=>{
+      if(b.dataset.prn||b.closest('[data-pr],[data-m5ui]'))return;
+      const t=norm(b.textContent);if(!(t.includes('광고')&&t.includes('합성')))return;
+      b.dataset.prn='1';
+      let anc=b;const p=b.parentElement;
+      if(p&&p!==document.body){const cs=getComputedStyle(p);if(cs.display.indexOf('flex')>=0&&cs.flexDirection.indexOf('column')<0)anc=p}
+      if(anc.nextElementSibling&&anc.nextElementSibling.classList.contains('pr-adnote'))return;
+      const n=document.createElement('small');n.className='pr-adnote';n.setAttribute('data-pr','1');
+      n.innerHTML=`🎁 광고 보상: 겹친 카드 자동 합성 · 성공률·천장은 합성 확률표와 같아요 · <span class="pr-link" data-pr-open="syn">ⓘ 확률 보기</span>`;
+      anc.after(n);
+    });
+  }
+
+  /* 클릭·키보드: 진입점 열기 / 창이 열려 있으면 게임 단축키 막기 */
+  document.addEventListener('click',e=>{
+    const o=e.target.closest&&e.target.closest('[data-pr-open]');if(!o)return;
+    e.preventDefault();e.stopPropagation();open(o.getAttribute('data-pr-open'));
+  },true);
+  addEventListener('keydown',e=>{
+    if(ov){
+      if(e.key==='Escape'){close();e.stopPropagation();e.stopImmediatePropagation();return}
+      if(e.key===' '||e.key==='Enter'||e.key==='ArrowLeft'||e.key==='ArrowRight'){e.stopPropagation();e.stopImmediatePropagation()}
+      return;
+    }
+    const o=e.target&&e.target.closest&&e.target.closest('[data-pr-open]');
+    if(o&&(e.key===' '||e.key==='Enter')){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();open(o.getAttribute('data-pr-open'))}
+  },true);
+
+  let q=0;
+  const kick=()=>{if(q)return;q=requestAnimationFrame(()=>{q=0;inject()})};
+  new MutationObserver(kick).observe(document.body,{childList:true,subtree:true});
+  addEventListener('resize',kick);
+  setInterval(inject,1500);
+  inject();
+  if(!src().live)console.warn('probInfo: MP_DATA를 읽지 못해 기본 설정값으로 확률을 표시합니다. (패치 ⑤ 확인)');
+})()}catch(e){console.warn('probInfo',e)}
 
 </script>
 </body>
