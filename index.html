@@ -3115,6 +3115,47 @@ try{(function tidyReveal(){
   new MutationObserver(()=>document.querySelectorAll('.pr-ib').forEach(fix))
     .observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
 })()}catch(e){console.warn('tidyReveal',e)}
+/* ================= rev 43: 광고 시청 말풍선은 2초만 보이고 사라지기 ================= */
+try{(function adBubbleAuto(){
+  const SHOW_MS=2000;          /* 말풍선이 보이는 시간 (ms) */
+  const KEY='광고를 시청하면';   /* 말풍선 안에 있는 글자 */
+  const OUT='mp-bub-out',NOW='mp-bub-now';
+  const css=document.createElement('style');
+  css.textContent=`.${OUT}{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transition:opacity .4s ease,visibility 0s linear .4s!important}
+.${NOW}{transition:none!important}`;
+  document.head.appendChild(css);
+  const info=new WeakMap(),seen={};let raf=0;
+  /* 글자에서 위로 올라가며 말풍선 상자(absolute/fixed 위치)를 찾는다 */
+  function bubbleOf(t){
+    for(let e=t.parentElement,i=0;e&&e!==document.body&&i<4;e=e.parentElement,i++){
+      const p=getComputedStyle(e).position;
+      if(p==='absolute'||p==='fixed')return e;
+    }
+    return null;
+  }
+  const shown=b=>b.getClientRects().length>0;
+  const keyOf=b=>String(b.className).split(/\s+/).filter(c=>c&&c!==OUT&&c!==NOW).sort().join(' ')+'|'+shown(b);
+  function scan(){
+    raf=0;const now=performance.now();
+    const r=document.evaluate("//body//text()[contains(.,'"+KEY+"')]",document,null,XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,null);
+    for(let i=0;i<r.snapshotLength;i++){
+      const b=bubbleOf(r.snapshotItem(i));
+      if(!b||b.closest('#modal,.psel,[class*="-ov"]'))continue;      /* 창 안의 안내문은 건드리지 않음 */
+      const txt=(b.textContent||'').trim();if(txt.length>80)continue;  /* 말풍선보다 큰 상자는 제외 */
+      const vis=shown(b),k=keyOf(b),o=info.get(b),last=seen[txt];
+      if(o&&o.k===k){if(vis&&last)last.at=now;continue}                /* 달라진 것 없음 */
+      if(o)clearTimeout(o.t);
+      const s={k,t:0};info.set(b,s);
+      /* 화면에 떠 있던 말풍선을 다시 그린 것이면 계속 숨김 */
+      if(!o&&vis&&last&&last.gone&&now-last.at<1500){b.classList.add(OUT,NOW);last.at=now;continue}
+      b.classList.remove(OUT,NOW);                                     /* 새로 나타나면 다시 보이게 */
+      if(vis){const L=seen[txt]={at:now,gone:false};s.t=setTimeout(()=>{b.classList.add(OUT);L.gone=true},SHOW_MS)}
+    }
+  }
+  new MutationObserver(()=>{if(!raf)raf=requestAnimationFrame(scan)})
+    .observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','style']});
+  scan();
+})()}catch(e){console.warn('adBubbleAuto',e)}
  })();
 
 try{(function skipBottomCenter(){
